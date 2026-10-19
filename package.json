@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "crawl": "node scripts/crawl.mjs",
     "start": "node server.mjs"
   },
   "engines": {

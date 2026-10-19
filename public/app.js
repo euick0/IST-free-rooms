@@ -52,17 +52,21 @@ const state = {
   open: new Set(),
 };
 
-const cache = new Map();
+const weeks = new Map();
 let data = null;
 let loadError = null;
 
+const mondayOf = iso => addDays(iso, -((asDate(iso).getUTCDay() + 6) % 7));
+
 async function load(date, force) {
-  if (!force && cache.has(date)) return cache.get(date);
-  const res = await fetch(`/api/rooms?date=${date}`);
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || `The server answered ${res.status}.`);
-  cache.set(date, body);
-  return body;
+  const monday = mondayOf(date);
+  if (force || !weeks.has(monday)) {
+    const res = await fetch(`/data/${monday}.json`, { cache: "no-cache" });
+    if (res.status === 404) throw new Error("There are no schedules for that week yet. Only this week and next week are available.");
+    if (!res.ok) throw new Error(`Loading the schedules failed (error ${res.status}). Try again in a minute.`);
+    weeks.set(monday, await res.json());
+  }
+  return { rooms: weeks.get(monday).rooms.map(r => ({ ...r, events: r.events.filter(e => e.date === date) })) };
 }
 
 function teachingDays() {
@@ -140,7 +144,7 @@ function renderControls() {
   if (state.date && !days.includes(state.date)) days.push(state.date);
   $("days").innerHTML = days.map(d =>
     `<button type="button" data-date="${d}" aria-pressed="${d === state.date}">${dayLabel(d)}</button>`).join("") +
-    `<label class="pick" title="Pick another date"><span>Other</span><input type="date" id="date" value="${state.date}" min="${addDays(lisbonNow().date, -7)}" max="${addDays(lisbonNow().date, 60)}"></label>`;
+    `<label class="pick" title="Pick another date"><span>Other</span><input type="date" id="date" value="${state.date}" min="${mondayOf(lisbonNow().date)}" max="${addDays(mondayOf(lisbonNow().date), 13)}"></label>`;
   $("from").value = toTime(state.from);
   $("until").value = toTime(state.until);
   for (const b of $("sort").children) b.setAttribute("aria-pressed", b.dataset.value === state.sort);
@@ -185,14 +189,14 @@ function render() {
   const dayText = ["Today", "Tomorrow"].includes(relative) ? `${relative}, ${fullDay}` : fullDay;
 
   if (loadError) {
-    $("headline").textContent = "Couldn't reach Fénix";
+    $("headline").textContent = "Couldn't load schedules";
     $("sub").textContent = loadError;
     $("rooms").innerHTML = "";
     showEmpty(`<button type="button" class="primary" data-action="retry">Try again</button>`);
     return;
   }
   if (!data) {
-    $("headline").textContent = "Checking Fénix…";
+    $("headline").textContent = "Loading schedules…";
     $("sub").textContent = dayText;
     $("rooms").innerHTML = "";
     showEmpty("");
@@ -281,14 +285,14 @@ function render() {
 }
 
 async function show(date, force = false) {
+  if (state.date !== date) data = null;
   state.date = date;
-  data = cache.get(date) ?? null;
   loadError = null;
   render();
   try {
     data = await load(date, force);
   } catch (err) {
-    if (!data) loadError = `${err.message} Fénix may be down, so try again in a minute.`;
+    if (!data) loadError = err.message;
   }
   if (state.date === date) render();
 }
