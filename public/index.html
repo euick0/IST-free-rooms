@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Free rooms · Alameda</title>
+  <meta name="description" content="Find rooms at IST Alameda with no class or booking, sorted by how long they stay free.">
+  <meta name="theme-color" content="#EBEEF1" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0E1822" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23009DE0'/><path d='M10 24V8h12v16M7 24h18' stroke='white' stroke-width='3' fill='none'/><circle cx='18.5' cy='16.5' r='1.6' fill='white'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="panel">
+      <p class="brand">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6"/><path d="M10 24V8h12v16M7 24h18"/><circle cx="18.5" cy="16.5" r="1.6"/></svg>
+        Free rooms <span>Alameda</span>
+      </p>
+
+      <form id="controls" class="controls" autocomplete="off">
+        <fieldset class="group">
+          <legend>Day</legend>
+          <div class="days" id="days"></div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Starting at</legend>
+          <div class="from">
+            <div class="stepper">
+              <button type="button" class="step" id="earlier" aria-label="30 minutes earlier">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg>
+              </button>
+              <input type="time" id="from" step="300" required aria-label="Starting time">
+              <button type="button" class="step" id="later" aria-label="30 minutes later">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg>
+              </button>
+            </div>
+            <button type="button" class="toggle" id="now" aria-pressed="false">Now</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Sort by</legend>
+          <div class="seg" id="sort">
+            <button type="button" data-value="now" aria-pressed="true">Free right away</button>
+            <button type="button" data-value="longest" aria-pressed="false">Longest stretch</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend id="buildingLabel">Building</legend>
+          <button type="button" class="picker" id="buildingBtn" popovertarget="buildingList" aria-haspopup="listbox" aria-labelledby="buildingLabel buildingName">
+            <span class="picker-name" id="buildingName">All buildings</span>
+            <span class="picker-count" id="buildingCount"></span>
+            <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+          </button>
+          <div popover id="buildingList" class="sheet">
+            <p class="sheet-title">Building <span id="sheetHint"></span></p>
+            <div role="listbox" aria-labelledby="buildingLabel" id="buildingOptions"></div>
+          </div>
+        </fieldset>
+
+        <details class="more" id="more">
+          <summary>More filters <span class="count" id="filterCount"></span></summary>
+          <fieldset class="group">
+            <legend>Room types</legend>
+            <div class="kinds">
+              <label class="kind">
+                <input type="checkbox" id="kind-class" checked>
+                <span class="box" aria-hidden="true"></span>
+                <span class="kind-text"><b>Classrooms</b><small>Rooms where classes are held</small></span>
+                <span class="n" id="n-class"></span>
+              </label>
+              <label class="kind">
+                <input type="checkbox" id="kind-study" checked>
+                <span class="box" aria-hidden="true"></span>
+                <span class="kind-text"><b>Study rooms</b><small>Libraries and reading rooms</small></span>
+                <span class="n" id="n-study"></span>
+              </label>
+              <label class="kind">
+                <input type="checkbox" id="kind-other">
+                <span class="box" aria-hidden="true"></span>
+                <span class="kind-text"><b>Labs and other rooms</b><small>Often locked</small></span>
+                <span class="n" id="n-other"></span>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset class="group">
+            <legend>Seats</legend>
+            <div class="seg" id="seats">
+              <button type="button" data-value="0" aria-pressed="true">Any</button>
+              <button type="button" data-value="20" aria-pressed="false">20+</button>
+              <button type="button" data-value="50" aria-pressed="false">50+</button>
+              <button type="button" data-value="100" aria-pressed="false">100+</button>
+            </div>
+          </fieldset>
+          <fieldset class="group">
+            <legend>Count free time until</legend>
+            <input type="time" id="until" step="300" required aria-label="Count free time until">
+          </fieldset>
+        </details>
+      </form>
+    </aside>
+
+    <main class="results">
+      <div class="summary">
+        <h1 id="headline">Checking Fénix…</h1>
+        <p id="sub"></p>
+      </div>
+
+      <div class="listhead">
+        <label class="search">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg>
+          <input type="search" id="q" placeholder="Find a room, like GA1 or Civil" aria-label="Find a room">
+        </label>
+        <div class="axis" id="axis" aria-hidden="true"></div>
+      </div>
+
+      <ol class="rooms" id="rooms"></ol>
+      <div class="empty" id="empty" hidden></div>
+
+      <footer class="foot">
+        Schedules come from the public Fénix API and refresh every 30 minutes.
+        A free room has nothing booked, but it may still be locked or in use.
+      </footer>
+    </main>
+  </div>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
